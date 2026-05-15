@@ -26,12 +26,24 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// GET /api/posts/slug/:slug - get single post by slug
+router.get('/slug/:slug', async (req, res) => {
+  try {
+    const post = await Post.findOne({ slug: req.params.slug });
+    if (!post) return res.status(404).json({ error: 'Not found' });
+    res.json(post);
+  } catch (e) {
+    console.error(e.message);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // POST /api/posts - create (admin)
 router.post('/', verifyAdmin, async (req, res) => {
   try {
-    const { title, description } = req.body;
-    if (!title || !description) return res.status(400).json({ error: 'Missing fields' });
-    const created = await Post.create({ title, description });
+    const { title, description, slug } = req.body;
+    if (!title || !description || !slug) return res.status(400).json({ error: 'Missing fields' });
+    const created = await Post.create({ title, description, slug });
     res.status(201).json(created);
   } catch (e) {
     console.error(e.message);
@@ -42,10 +54,11 @@ router.post('/', verifyAdmin, async (req, res) => {
 // PUT /api/posts/:id - update (admin)
 router.put('/:id', verifyAdmin, async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, slug } = req.body;
     const update = {};
     if (title !== undefined) update.title = title;
     if (description !== undefined) update.description = description;
+    if (slug !== undefined) update.slug = slug;
     const updated = await Post.findByIdAndUpdate(req.params.id, { $set: update }, { new: true });
     if (!updated) return res.status(404).json({ error: 'Not found' });
     res.json(updated);
